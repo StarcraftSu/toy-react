@@ -1,0 +1,9 @@
+{
+  "name": "cool",
+  "version": "1.0.0",
+  "description": "a toy-react study",
+  "main": "index.js",
+  "repository": "not yet",
+  "author": "StarcraftSu <starcraftsu@gmail.com>",
+  "license": "MIT"
+}
