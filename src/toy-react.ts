@@ -31,7 +31,7 @@ function createTextElement(text){
 
 const VERSION = '1.0'
 
-export default {
+export {
     createElement,
     createTextElement,
     VERSION
