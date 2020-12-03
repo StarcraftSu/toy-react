@@ -2,8 +2,23 @@
   "name": "cool",
   "version": "1.0.0",
   "description": "a toy-react study",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "module": "dist/index.es.js",
   "repository": "not yet",
   "author": "StarcraftSu <starcraftsu@gmail.com>",
-  "license": "MIT"
+  "license": "MIT",
+  "scripts": {
+    "build": "rollup -c"
+  },
+  "dependencies": {},
+  "devDependencies": {
+    "@babel/core": "^7.12.9",
+    "@babel/preset-env": "^7.12.7",
+    "@babel/preset-typescript": "^7.12.7",
+    "@rollup/plugin-babel": "^5.2.2",
+    "@rollup/plugin-commonjs": "^17.0.0",
+    "@rollup/plugin-node-resolve": "^11.0.0",
+    "rollup-plugin-typescript2": "^0.29.0",
+    "typescript": "^4.1.2"
+  }
 }
