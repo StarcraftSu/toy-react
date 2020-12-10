@@ -12,7 +12,7 @@ const extensions = [...DEFAULT_EXTENSIONS,'.ts','.tsx']
 const name = 'toyReact'
 
 export default {
-  input: './src/index.ts',
+  input: './src/index.tsx',
   output: [
     {
       file: pkg.main,
