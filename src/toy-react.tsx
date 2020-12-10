@@ -1,3 +1,5 @@
+const VERSION = '1.0'
+
 const TEXT_ELEMENT = 'TEXT_ELEMENT'
 /**
  * 
@@ -29,9 +31,7 @@ function createTextElement(text){
     }
 }
 
-const VERSION = '1.0'
-
-export {
+export default {
     createElement,
     createTextElement,
     VERSION

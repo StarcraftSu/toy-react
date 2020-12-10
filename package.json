@@ -9,7 +9,8 @@
   "license": "MIT",
   "scripts": {
     "dev": "rollup -c -w",
-    "build": "rollup -c"
+    "build": "rollup -c",
+    "note": "watch 'node ./note/parseMarkdown.js' ./note"
   },
   "dependencies": {},
   "devDependencies": {
@@ -19,9 +20,11 @@
     "@rollup/plugin-babel": "^5.2.2",
     "@rollup/plugin-commonjs": "^17.0.0",
     "@rollup/plugin-node-resolve": "^11.0.0",
+    "marked": "^1.2.5",
     "rollup-plugin-livereload": "^2.0.0",
     "rollup-plugin-serve": "^1.1.0",
     "rollup-plugin-typescript2": "^0.29.0",
-    "typescript": "^4.1.2"
+    "typescript": "^4.1.2",
+    "watch": "^1.0.2"
   }
 }
