@@ -9,5 +9,5 @@ import Foo from './components/foo'
 
 const container = document.getElementById('root')
 
-React.render(Foo,container)
+React.render(Foo({myWord:'cool'}),container)
 export { React }

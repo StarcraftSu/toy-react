@@ -32,6 +32,11 @@ function createTextElement(text:string){
     }
 }
 
+/**
+ * render function 会自动接收到一个解析好的element-tree并进行渲染
+ * @param element 
+ * @param container 
+ */
 function render(element,container:HTMLElement){
     // 创建dom
     const dom = element.type === TEXT_ELEMENT
@@ -44,8 +49,11 @@ function render(element,container:HTMLElement){
     .forEach(prop=>{
         dom[prop] = element.props[prop]
     })
-
+    // 后序遍历 从最下层组件开始挂载
     element.props.children.forEach(child=>render(child,dom))
+    // if(element.props.className){
+    //     console.log('append:'+ element.props.className)
+    // }
     container.appendChild(dom)
 }
 
