@@ -57,6 +57,29 @@ function render(element,container:HTMLElement){
     container.appendChild(dom)
 }
 
+// Fiber
+// 这里用了简称，应该为任务单元，unitOfWork
+let workToDo = null
+const requestIdleCallback = window.requestIdleCallback
+// 工作流
+function workLoop (deadline){
+    // 是否应该停止执行任务
+    let shouldStop = false
+    // 是否可以执行工作
+    while(workToDo && !shouldStop){
+        workToDo = work(workToDo)
+        // 如果没剩余时间，跳出循环
+        shouldStop = deadline.timeRemaining()<1
+    }
+    requestIdleCallback(workLoop)
+}
+// 空余时间执行任务循环
+requestIdleCallback(workLoop)
+// 执行任务
+function work(workToDo){
+    // DO WORK
+}
+
 export default {
     createElement,
     render,
