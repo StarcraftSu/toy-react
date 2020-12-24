@@ -17,3 +17,10 @@
     - 执行任务，并同时确认下一个任务，等同于写迭代同时确认下一个迭代的内容
     - 使用requestIdleCallback来模拟这种见缝插针的调度模式，具体要参考上面的scheduler
 参考：SchedulerPostTaskOnly.js
+
+### 新调度结构，Fiber
+1. 每个fiber对应对一个element，而每个fiber就是一个unit of work
+    - 创建一个root fiber，
+
+
+Fiber类型-参考：ReactInternalTypes.js

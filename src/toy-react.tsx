@@ -37,24 +37,29 @@ function createTextElement(text:string){
  * @param element 
  * @param container 
  */
-function render(element,container:HTMLElement){
+function createDom(fiber){
     // 创建dom
-    const dom = element.type === TEXT_ELEMENT
-    ? document.createTextNode(element.props.nodeValue)
-    : document.createElement(element.type)
+    const dom = fiber.type === TEXT_ELEMENT
+    ? document.createTextNode(fiber.props.nodeValue)
+    : document.createElement(fiber.type)
     // 一般的属性赋值到dom上
     const isProperty = key => key!=='children'
-    Reflect.ownKeys(element.props) // 基本等于Object.keys
+    Reflect.ownKeys(fiber.props) // 基本等于Object.keys
     .filter(isProperty)
     .forEach(prop=>{
-        dom[prop] = element.props[prop]
+        dom[prop] = fiber.props[prop]
     })
-    // 后序遍历 从最下层组件开始挂载
-    element.props.children.forEach(child=>render(child,dom))
-    // if(element.props.className){
-    //     console.log('append:'+ element.props.className)
-    // }
-    container.appendChild(dom)
+    return dom
+}
+
+// ① 给予了第一份工作
+function render(element,container:HTMLElement){
+   workToDo = {
+       dom:container,
+       props:{
+           children:[element]
+       }
+   }
 }
 
 // Fiber
@@ -73,11 +78,54 @@ function workLoop (deadline){
     }
     requestIdleCallback(workLoop)
 }
-// 空余时间执行任务循环
+// 空余时间执行任务循环，第一次注册，第一次render之后开始调用
 requestIdleCallback(workLoop)
+
 // 执行任务
-function work(workToDo){
-    // DO WORK
+function work(fiber){
+    // 添加dom节点
+    if(!fiber.dom){
+        fiber.dom = createDom(fiber)
+    }
+    // 如果fiber有父节点，就把自己的dom节点挂载到父节点上
+    if(fiber.parent){
+        fiber.parent.dom.appendChild(fiber.dom)
+    }
+
+    // 创建新的fibers
+    const children = fiber.props.children
+    let index = 0
+    let prevSibling = null
+    while(index<children.length){
+        const child = children[index]
+        // 根据child构建新的fiber
+        const newFiber = {
+            type: child.type,
+            props: child.props,
+            parent: fiber,
+            dom: null
+        }
+
+        if(index === 0){
+            fiber.child = newFiber
+        }else{
+            prevSibling.sibling = newFiber
+        }
+
+        prevSibling = newFiber
+        index++
+    }
+    // 返回下一个任务
+    if(fiber.child){
+        return fiber.child
+    }
+    let nextFiber = fiber
+    while(nextFiber){
+        if(nextFiber.sibling){
+            return nextFiber.sibling
+        }
+        nextFiber = nextFiber.parent
+    }
 }
 
 export default {
