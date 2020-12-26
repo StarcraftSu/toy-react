@@ -52,19 +52,40 @@ function createDom(fiber){
     return dom
 }
 
+function commitRoot(){
+    // TODO add nodes to dom
+    commitWork(wipRoot.child)
+    wipRoot = null
+}
+
+// wipRoot的dom就是容器，所以不需要append
+function commitWork(fiber){
+    if(!fiber){
+        return
+    }
+    const domParent = fiber.parent.dom
+    domParent.appendChild(fiber.dom)
+    commitWork(fiber.child)
+    commitWork(fiber.sibling)
+}
+
 // ① 给予了第一份工作
 function render(element,container:HTMLElement){
-   workToDo = {
+   // 初始化根节点
+   wipRoot = {
        dom:container,
        props:{
            children:[element]
        }
    }
+
+   workToDo = wipRoot
 }
 
 // Fiber
 // 这里用了简称，应该为任务单元，unitOfWork
 let workToDo = null
+let wipRoot = null
 const requestIdleCallback = window.requestIdleCallback
 // 工作流
 function workLoop (deadline){
@@ -76,21 +97,27 @@ function workLoop (deadline){
         // 如果没剩余时间，跳出循环
         shouldStop = deadline.timeRemaining()<1
     }
+    // 如果没有下一个任务，并且有初始化的节点，就提交整个fiber tree
+    if(!workToDo && wipRoot){
+        commitRoot()
+    }
+
     requestIdleCallback(workLoop)
 }
 // 空余时间执行任务循环，第一次注册，第一次render之后开始调用
 requestIdleCallback(workLoop)
 
 // 执行任务
+// work in  progress root aka.wipRoot
 function work(fiber){
     // 添加dom节点
     if(!fiber.dom){
         fiber.dom = createDom(fiber)
     }
     // 如果fiber有父节点，就把自己的dom节点挂载到父节点上
-    if(fiber.parent){
-        fiber.parent.dom.appendChild(fiber.dom)
-    }
+    // if(fiber.parent){
+    //     fiber.parent.dom.appendChild(fiber.dom)
+    // }
 
     // 创建新的fibers
     const children = fiber.props.children
@@ -105,13 +132,14 @@ function work(fiber){
             parent: fiber,
             dom: null
         }
-
+        // 挂载第一个child节点
         if(index === 0){
             fiber.child = newFiber
         }else{
             prevSibling.sibling = newFiber
         }
 
+        // prevSibling指向当前节点，同级之间用sibling链接
         prevSibling = newFiber
         index++
     }

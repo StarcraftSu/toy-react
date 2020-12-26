@@ -24,3 +24,10 @@
 
 
 Fiber类型-参考：ReactInternalTypes.js
+
+### Render与Commit阶段
+1. 第一个要解决的问题是，如果渲染没有完成，浏览器打断了如何恢复
+2. 解决方案是先不一个个挂载dom节点，直到所有的工作单元都完成了，再将整个fiber tree提交到dom上
+3. 最后以递归的方式挂载到dom上
+
+### Reconciliation 调和阶段
