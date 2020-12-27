@@ -52,9 +52,15 @@ function createDom(fiber){
     return dom
 }
 
+// Fiber
+// 这里用了简称，应该为任务单元，unitOfWork
+let workToDo = null
+let wipRoot = null
+let currentRoot = null
+
 function commitRoot(){
-    // TODO add nodes to dom
     commitWork(wipRoot.child)
+    currentRoot = wipRoot
     wipRoot = null
 }
 
@@ -76,16 +82,13 @@ function render(element,container:HTMLElement){
        dom:container,
        props:{
            children:[element]
-       }
+       },
+       alternate: currentRoot
    }
 
    workToDo = wipRoot
 }
 
-// Fiber
-// 这里用了简称，应该为任务单元，unitOfWork
-let workToDo = null
-let wipRoot = null
 const requestIdleCallback = window.requestIdleCallback
 // 工作流
 function workLoop (deadline){
@@ -114,35 +117,10 @@ function work(fiber){
     if(!fiber.dom){
         fiber.dom = createDom(fiber)
     }
-    // 如果fiber有父节点，就把自己的dom节点挂载到父节点上
-    // if(fiber.parent){
-    //     fiber.parent.dom.appendChild(fiber.dom)
-    // }
 
-    // 创建新的fibers
     const children = fiber.props.children
-    let index = 0
-    let prevSibling = null
-    while(index<children.length){
-        const child = children[index]
-        // 根据child构建新的fiber
-        const newFiber = {
-            type: child.type,
-            props: child.props,
-            parent: fiber,
-            dom: null
-        }
-        // 挂载第一个child节点
-        if(index === 0){
-            fiber.child = newFiber
-        }else{
-            prevSibling.sibling = newFiber
-        }
+    reconcileChildren(fiber,children)
 
-        // prevSibling指向当前节点，同级之间用sibling链接
-        prevSibling = newFiber
-        index++
-    }
     // 返回下一个任务
     if(fiber.child){
         return fiber.child
@@ -153,6 +131,32 @@ function work(fiber){
             return nextFiber.sibling
         }
         nextFiber = nextFiber.parent
+    }
+}
+
+function  reconcileChildren(wipFiber,children){
+    let index = 0
+    let prevSibling = null
+
+    while(index<children.length){
+        const child = children[index]
+        // 根据child构建新的fiber
+        const newFiber = {
+            type: child.type,
+            props: child.props,
+            parent: wipFiber,
+            dom: null
+        }
+        // 挂载第一个child节点
+        if(index === 0){
+            wipFiber.child = newFiber
+        }else{
+            prevSibling.sibling = newFiber
+        }
+
+        // prevSibling指向当前节点，同级之间用sibling链接
+        prevSibling = newFiber
+        index++
     }
 }
 
