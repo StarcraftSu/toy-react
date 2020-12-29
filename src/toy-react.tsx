@@ -129,7 +129,12 @@ function commitWork(fiber){
     if(!fiber){
         return
     }
-    const domParent = fiber.parent.dom
+    // 如果是function component fiber.parent是不存在dom这个属性的
+    let fiberParent = fiber.parent
+    if(!fiberParent.dom){
+        fiberParent = fiberParent.parent
+    }
+    const domParent = fiberParent.dom
     if(fiber.effectTag === 'PLACEMENT' && fiber.dom!==null){
         domParent.appendChild(fiber.dom)
     }else if(
@@ -142,15 +147,22 @@ function commitWork(fiber){
             fiber.props
         )
     }else if(fiber.effectTag === 'DELETION'){
-        domParent.removeChild(fiber.dom)
+        commitDeletion(fiber, domParent)
     }
     commitWork(fiber.child)
     commitWork(fiber.sibling)
 }
 
+    function commitDeletion(fiber, domParent) {
+        if (fiber.dom) {
+            domParent.removeChild(fiber.dom)
+        } else {
+            commitDeletion(fiber.child, domParent)
+        }
+    }
+
 // ① 给予了第一份工作
 function render(element,container:HTMLElement){
-    console.log('render')
    // 初始化根节点
    wipRoot = {
        dom:container,
@@ -187,13 +199,12 @@ requestIdleCallback(workLoop)
 // 执行任务
 // work in  progress root aka.wipRoot
 function work(fiber){
-    // 添加dom节点
-    if(!fiber.dom){
-        fiber.dom = createDom(fiber)
+    const isFunctionComponent = fiber.type instanceof Function
+    if(isFunctionComponent){
+        updateFunctionComponent(fiber)
+    }else{
+        updateHostComponent(fiber)
     }
-
-    const children = fiber.props.children
-    reconcileChildren(fiber,children)
 
     // 返回下一个任务
     if(fiber.child){
@@ -206,6 +217,22 @@ function work(fiber){
         }
         nextFiber = nextFiber.parent
     }
+}
+
+function updateFunctionComponent(fiber){
+    // fiber.type === function
+    const children = [fiber.type(fiber.props)]
+    reconcileChildren(fiber,children)
+}
+
+function updateHostComponent(fiber){
+    // 添加dom节点
+    if(!fiber.dom){
+        fiber.dom = createDom(fiber)
+    }
+
+    const children = fiber.props.children
+    reconcileChildren(fiber,children)
 }
 
 function  reconcileChildren(wipFiber,children){
@@ -239,6 +266,7 @@ function  reconcileChildren(wipFiber,children){
             alternate: null,
             effectTag: 'PLACEMENT'
            }
+           console.log(newFiber)
         }
 
         if(oldFiber && !sameType){

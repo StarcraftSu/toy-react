@@ -33,4 +33,5 @@ Fiber类型-参考：ReactInternalTypes.js
 ### Reconciliation 调和阶段
 1. 在调和阶段会对比render function接收到了react-element和之前提交的fiber-tree
 2. 所以在提交fiber-tree之后需要将其存起来
-3. 当老的fiber
+
+### Functional Components
