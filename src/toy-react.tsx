@@ -150,6 +150,7 @@ function commitWork(fiber){
 
 // ① 给予了第一份工作
 function render(element,container:HTMLElement){
+    console.log('render')
    // 初始化根节点
    wipRoot = {
        dom:container,
@@ -217,9 +218,7 @@ function  reconcileChildren(wipFiber,children){
     ){
         const child = children[index]
         let newFiber = null
-
         const sameType = oldFiber && child && child.type === oldFiber.type
-
         if(sameType) {
            newFiber = {
                type: oldFiber.type,
@@ -233,9 +232,9 @@ function  reconcileChildren(wipFiber,children){
 
         if(child && !sameType){
            newFiber = {
-            type: oldFiber.type,
+            type: child.type,
             props: child.props,
-            dom: oldFiber.dom,
+            dom: null,
             parent: wipFiber,
             alternate: null,
             effectTag: 'PLACEMENT'

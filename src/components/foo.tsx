@@ -2,7 +2,7 @@ import React from '../toy-react'
 // 应用了
 const Element = ({myWord})=>{
     return (
-        <div id="foo" className='root'>
+        <div id="foo" className='root' onClick={()=>alert('oh shit')}>
             <a className='uncle'>{myWord}</a>
             <b className='aunt'/>
             <div className='father'>
