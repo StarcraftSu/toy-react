@@ -43,7 +43,6 @@ function createDom(fiber){
     ? document.createTextNode(fiber.props.nodeValue)
     : document.createElement(fiber.type)
     // 一般的属性赋值到dom上
-    const isProperty = key => key!=='children'
     Reflect.ownKeys(fiber.props) // 基本等于Object.keys
     .filter(isProperty)
     .forEach(prop=>{
@@ -51,14 +50,75 @@ function createDom(fiber){
     })
     return dom
 }
+// 是不是事件
+const isEvent = key => key.startsWith('on')
+// 是不是属性
+const isProperty = key => key!=='children' && !isEvent(key)
+// 是不是新的属性
+const isNew = (prev,next)=>key=>prev[key]!==next[key]
+// 是不是属性被移除了
+const isGone = (prev, next) => key => !(key in next)
+
+
+function updateDom(dom,prevProps,nextProps){
+    // Remove old or changed event listeners
+    Object.keys(prevProps)
+    .filter(isEvent)
+    .filter(
+        key =>
+        !(key in nextProps) || 
+        isNew(prevProps, nextProps)(key)
+    )
+    .forEach(name=>{
+        const eventType = name
+        .toLowerCase()
+        .substring(2)
+
+        dom.removeEventListener(
+            eventType,
+            prevProps[name]
+        )
+    })
+
+    Object.keys(prevProps)
+    .filter(isProperty)
+    .filter(isGone(prevProps,nextProps))
+    .forEach(name=>{
+        dom[name] = ""
+    })
+
+    // Set new or changed properties
+    Object.keys(nextProps)
+    .filter(isProperty)
+    .filter(isNew(prevProps, nextProps)) // 老哥太秀了，利用filter悄咪咪的注入了key
+    .forEach(name => {
+        dom[name] = nextProps[name]
+    })
+
+    Object.keys(nextProps)
+      .filter(isEvent)
+      .filter(isNew(prevProps,nextProps))
+      .forEach(name=>{
+        const eventType = name
+        .toLowerCase()
+        .substring(2)
+
+        dom.addEventListener(
+            eventType,
+            prevProps[name]
+        )
+      })
+}
 
 // Fiber
 // 这里用了简称，应该为任务单元，unitOfWork
 let workToDo = null
 let wipRoot = null
 let currentRoot = null
+let deletions = []
 
 function commitRoot(){
+    deletions.forEach(commitWork)
     commitWork(wipRoot.child)
     currentRoot = wipRoot
     wipRoot = null
@@ -70,7 +130,20 @@ function commitWork(fiber){
         return
     }
     const domParent = fiber.parent.dom
-    domParent.appendChild(fiber.dom)
+    if(fiber.effectTag === 'PLACEMENT' && fiber.dom!==null){
+        domParent.appendChild(fiber.dom)
+    }else if(
+        fiber.effectTag === 'UPDATE' && 
+        fiber.dom!=null
+    ){
+        updateDom(
+            fiber.dom,
+            fiber.alternate.props,
+            fiber.props
+        )
+    }else if(fiber.effectTag === 'DELETION'){
+        domParent.removeChild(fiber.dom)
+    }
     commitWork(fiber.child)
     commitWork(fiber.sibling)
 }
@@ -85,7 +158,7 @@ function render(element,container:HTMLElement){
        },
        alternate: currentRoot
    }
-
+   deletions = []
    workToDo = wipRoot
 }
 
@@ -136,16 +209,46 @@ function work(fiber){
 
 function  reconcileChildren(wipFiber,children){
     let index = 0
+    let oldFiber = wipFiber.alternate && wipFiber.alternate.child
     let prevSibling = null
-
-    while(index<children.length){
+    while(
+        index<children.length 
+        || oldFiber!=null
+    ){
         const child = children[index]
-        // 根据child构建新的fiber
-        const newFiber = {
-            type: child.type,
+        let newFiber = null
+
+        const sameType = oldFiber && child && child.type === oldFiber.type
+
+        if(sameType) {
+           newFiber = {
+               type: oldFiber.type,
+               props: child.props,
+               dom: oldFiber.dom,
+               parent: wipFiber,
+               alternate: oldFiber,
+               effectTag: 'UPDATE'
+           }
+        }
+
+        if(child && !sameType){
+           newFiber = {
+            type: oldFiber.type,
             props: child.props,
+            dom: oldFiber.dom,
             parent: wipFiber,
-            dom: null
+            alternate: null,
+            effectTag: 'PLACEMENT'
+           }
+        }
+
+        if(oldFiber && !sameType){
+           oldFiber.effectTag = 'DELETION'
+           deletions.push(oldFiber)
+        }
+
+        if(oldFiber){
+            oldFiber = oldFiber.sibling
         }
         // 挂载第一个child节点
         if(index === 0){
