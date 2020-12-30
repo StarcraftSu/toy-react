@@ -267,7 +267,7 @@ function updateHostComponent(fiber){
     reconcileChildren(fiber,children)
 }
 
-function  reconcileChildren(wipFiber,children){
+function reconcileChildren(wipFiber,children){
     let index = 0
     let oldFiber = wipFiber.alternate && wipFiber.alternate.child
     let prevSibling = null
