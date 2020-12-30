@@ -42,12 +42,7 @@ function createDom(fiber){
     const dom = fiber.type === TEXT_ELEMENT
     ? document.createTextNode(fiber.props.nodeValue)
     : document.createElement(fiber.type)
-    // 一般的属性赋值到dom上
-    Reflect.ownKeys(fiber.props) // 基本等于Object.keys
-    .filter(isProperty)
-    .forEach(prop=>{
-        dom[prop] = fiber.props[prop]
-    })
+    updateDom(dom,{},fiber.props)
     return dom
 }
 // 是不是事件
@@ -105,7 +100,7 @@ function updateDom(dom,prevProps,nextProps){
 
         dom.addEventListener(
             eventType,
-            prevProps[name]
+            nextProps[name]
         )
       })
 }
@@ -153,13 +148,13 @@ function commitWork(fiber){
     commitWork(fiber.sibling)
 }
 
-    function commitDeletion(fiber, domParent) {
-        if (fiber.dom) {
-            domParent.removeChild(fiber.dom)
-        } else {
-            commitDeletion(fiber.child, domParent)
-        }
+function commitDeletion(fiber, domParent) {
+    if (fiber.dom) {
+        domParent.removeChild(fiber.dom)
+    } else {
+        commitDeletion(fiber.child, domParent)
     }
+}
 
 // ① 给予了第一份工作
 function render(element,container:HTMLElement){
@@ -219,10 +214,47 @@ function work(fiber){
     }
 }
 
+let wipFiber = null
+let hookIndex = null
+
 function updateFunctionComponent(fiber){
+    wipFiber = fiber
+    hookIndex = 0
+    wipFiber.hooks = []
     // fiber.type === function
     const children = [fiber.type(fiber.props)]
     reconcileChildren(fiber,children)
+}
+
+function useState(initialValue){
+    const oldHook = 
+        wipFiber.alternate &&
+        wipFiber.alternate.hooks &&
+        wipFiber.alternate.hooks[hookIndex]
+
+    const hook = {
+        state: oldHook ? oldHook.state : initialValue,
+        queue: []
+    }
+
+    const actions = oldHook ? oldHook.queue : []
+    actions.forEach(action=>{
+        hook.state = action(hook.state)
+    })
+    const setState = action => {
+        hook.queue.push(action)
+        wipRoot = {
+            dom: currentRoot.dom,
+            props: currentRoot.props,
+            alternate: currentRoot
+        }
+        workToDo = wipRoot
+        deletions = []
+    }
+
+    wipFiber.hooks.push(hook)
+    hookIndex++
+    return [hook.state,setState]
 }
 
 function updateHostComponent(fiber){
@@ -266,7 +298,7 @@ function  reconcileChildren(wipFiber,children){
             alternate: null,
             effectTag: 'PLACEMENT'
            }
-           console.log(newFiber)
+        //    console.log(newFiber)
         }
 
         if(oldFiber && !sameType){
@@ -293,5 +325,6 @@ function  reconcileChildren(wipFiber,children){
 export default {
     createElement,
     render,
+    useState,
     VERSION
 }
